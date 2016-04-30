@@ -159,9 +159,7 @@ void s_lookup(int yylex)
 		yylval.y_str = strsave(yytext);
 		break;
 	case Identifier:
-		if (yylval.y_sym = s_find(yytext)) {
-			break;
-		}
+		if (yylval.y_sym = s_find(yytext)) break;
 		yylval.y_sym = s_create(yytext);
 		break;
 	default:

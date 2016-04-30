@@ -23,13 +23,12 @@ int yynerrs = 0;
 
 #else
 
-#include "y.tab.h"
+//#include "y.tab.h"
 #define	token(x)	x
 
 #endif 
 
 #define	END(v)	(v-1 + sizeof v / sizeof v[0])
-int screen();
 void count();
 %}
 
@@ -88,7 +87,7 @@ other				.
 "volatile"			{ count(); return(VOLATILE); }
 "while"				{ count(); return(WHILE); }
 
-L?\"(\\.|[^\\"\n])*\"		{ count(); return STRING_LITERAL; }
+L?\"(\\.|[^\\"\n])*\"		{ count(); printf("[%s]\n",yytext); return STRING_LITERAL; }
 
 ^"#"{blank}*{digit}+({blank}+.*)?\n	yymark();
 
@@ -104,12 +103,8 @@ L?\"(\\.|[^\\"\n])*\"		{ count(); return STRING_LITERAL; }
 "++"				return token(PP);
 "--"				return token(MM);
 
-{letter}{letter_or_digit}*	return screen();
-
-{digit}+			{
-					s_lookup(token(Constant));
-					return token(Constant);
-				}
+{letter}{letter_or_digit}*	{ s_lookup(Identifier); return Identifier; }
+{digit}+			{ s_lookup(Constant); return Constant; }
  
 {white_space}+
 
@@ -117,47 +112,10 @@ L?\"(\\.|[^\\"\n])*\"		{ count(); return STRING_LITERAL; }
 
 %%
 
-/*
- *	reserved word screener
- */
-struct rwtable {	/* reserved word table */
-	char	*rw_name;	/* representation */
-	int	rw_yylex;	/* ylex() value */
-} rwtable[] = {		/* sorted */
-	"break",	token(BREAK),
-	"continue",	token(CONTINUE),
-	"else",		token(ELSE),
-	"if",		token(IF),
-	"int",		token(INT),
-	"return",	token(RETURN),
-	"while",	token(WHILE)
-};
- 
-int screen()
-{
-	struct rwtable *low = rwtable,
-			*high = END(rwtable),
-			*mid;
-	int c;
-
-	while (low <= high) {
-		mid = low + (high - low)/2;
-		if (!(c = strcmp(mid->rw_name, yytext)))
-			return mid->rw_yylex;
-		else if (c < 0)
-			low = mid + 1;
-		else
-			high = mid -1;
-	}
-	s_lookup(token(Identifier));
-
-	return token(Identifier);
-}
-
 int column = 0;
 void count()
 {
-	for (int i=0; yytext[i] != '\0'; i++)
+	for (int i=0; yytext[i] != '\0'; i++) {
 		if (yytext[i] == '\n') {
 			column = 0;
 		} else if (yytext[i] == '\t') {
@@ -165,5 +123,6 @@ void count()
 		} else {
 			column++;
 		}
+	}
 //	ECHO;
 }

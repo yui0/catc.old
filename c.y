@@ -13,8 +13,8 @@ extern int l_offset, l_max;
 %}
 
 %union  {
-	struct symtab * y_sym;	/* Identifier */
-	char * y_str;		/* Constant */
+	struct symtab *y_sym;	/* Identifier */
+	char *y_str;		/* Constant */
 	int y_num;		/* count */
 	int y_lab;		/* label */
 }
@@ -42,14 +42,6 @@ extern int l_offset, l_max;
 
 %token	<y_sym> Identifier
 %token	<y_str> Constant
-//%token	STRING_LITERAL
-//%token	INT
-//%token	IF
-//%token	ELSE
-//%token	WHILE
-//%token	BREAK
-//%token	CONTINUE
-//%token	RETURN
 %token	';'
 %token	'('
 %token	')'
@@ -83,7 +75,7 @@ extern int l_offset, l_max;
  *	typed non-terminal symbols
  */
 
-%type	<y_sym> optional_parameter_list, parameter_list
+%type	<y_sym>	optional_parameter_list, parameter_list
 %type	<y_num>	optional_argument_list, argument_list
 %type	<y_lab>	if_prefix, loop_prefix
 
@@ -107,6 +99,7 @@ program
 	:	{ init(); }
 	  definitions
 		{ end_program(); }
+	;
 
 definitions
 	: definition
@@ -114,11 +107,13 @@ definitions
 		{ yyerrok; }
 	| error
 	| definitions error
+	;
 
 definition
 	: function_definition
 	| INT function_definition
 	| declaration
+	;
 
 function_definition
 	: Identifier '('
@@ -137,12 +132,14 @@ function_definition
 		  gen_pr(OP_RETURN, "end of function");
 		  fix_entry($1, $<y_lab>7);
 		}
+	;
 
 optional_parameter_list
 	: /* no formal parameters */
 		{ $$ = (struct symtab *) 0; }
 	| parameter_list
 		/* $$ = $1 = chain of formal parameters */
+	;
 
 parameter_list
 	: Identifier
@@ -161,15 +158,18 @@ parameter_list
 		{ $$ = $3;
 		  yyerrok;
 		}
+	;
 
 parameter_declarations
 	: /* null */
 	| parameter_declarations parameter_declaration
 		{ yyerrok; }
 	| parameter_declarations error	
+	;
 
 parameter_declaration
 	: INT parameter_declarator_list sc
+	;
 
 parameter_declarator_list
 	: Identifier
@@ -185,6 +185,7 @@ parameter_declarator_list
 		  yyerrok;
 		}
 	| parameter_declarator_list ',' error
+	;
 
 compound_statement
 	: '{'
@@ -197,12 +198,14 @@ compound_statement
 		  l_offset = $<y_lab>2;
 		  blk_pop();
 		}
+	;
 
 declarations
 	: /* null */
 	| declarations declaration
 		{ yyerrok; }
 	| declarations error
+	;
 
 declaration
 	: INT declarator_list sc
@@ -253,15 +256,13 @@ statement
 	| if_prefix statement
 		{ gen_label($1); }
 	| if_prefix statement ELSE 
-		{ $<y_lab>$ = gen_jump(OP_JUMP, new_label(),
-			"past ELSE");
+		{ $<y_lab>$ = gen_jump(OP_JUMP, new_label(), "past ELSE");
 		  gen_label($1);
 		}
 	  statement
 		{ gen_label($<y_lab>4); }
 	| loop_prefix
-		{ $<y_lab>$ = gen_jump(OP_JUMPZ, new_label(),
-			"WHILE");
+		{ $<y_lab>$ = gen_jump(OP_JUMPZ, new_label(), "WHILE");
 		  push_break($<y_lab>$);
 		}
 	  statement
@@ -302,7 +303,7 @@ expression
 		{ yyerrok; }
 	| expression error
 	| expression ',' error
-	| string
+	| string { printf("+"); }
 	;
 
 string
@@ -403,35 +404,66 @@ binary
 		{ gen_alu(ALU_MOD, "%");
 		  gen(OP_STORE, gen_mod($1), OFFSET($1), NAME($1));
 		}
+	;
 
 optional_argument_list
 	: /* no actual arguments */
 		{ $$ = 0; /* # of actual arguments */ }
 	| argument_list
 		/* $$ = $1 = # of actual arguments */
+	;
 
 argument_list
 	: binary
 		{ $$ = 1; }
 	| argument_list ',' binary
-		{ ++ $$;
-		  yyerrok;
-		}
+		{ ++ $$; yyerrok; }
 	| error
 		{ $$ = 0; }
 	| argument_list error
 	| argument_list ',' error
+	| string { printf("*"); $$ = 1; }	// FIX!!
+	;
 
 /*
  *	make certain terminal symbols very important
  */
 rp	: ')'	{ yyerrok; }
+	;
 sc	: ';'	{ yyerrok; }
+	;
 rr	: '}'	{ yyerrok; }
+	;
 
-;
+storage_class_specifier
+	: TYPEDEF	/* identifiers must be flagged as TYPEDEF_NAME */
+	| EXTERN
+	| STATIC
+	| THREAD_LOCAL
+	| AUTO
+	| REGISTER
+	;
+
+type_specifier
+	: VOID
+	| CHAR
+	| SHORT
+	| INT
+	| LONG
+	| FLOAT
+	| DOUBLE
+	| SIGNED
+	| UNSIGNED
+	| BOOL
+	| COMPLEX
+	| IMAGINARY	  	/* non-mandated extension */
+	| atomic_type_specifier
+	| struct_or_union_specifier
+	| enum_specifier
+	| TYPEDEF_NAME		/* after it has been defined as such */
+	;
+
 %%
-//#include "y.tab.h"
 #include "lex.yy.c"
 #include <stdio.h>
 
@@ -492,7 +524,7 @@ yymark()
 	}
 }
 
-void yyerror(char *s)
+/*void yyerror(char *s)
 {
 	extern int yynerrs;	// total number of errors
 	yyerfp = stdout;
@@ -500,13 +532,19 @@ void yyerror(char *s)
 	fprintf(yyerfp, "[error %d] ", yynerrs+1);
 	yywhere();
 	fprintf(yyerfp, "%s\n", s);
-//	fputs(s, yyerfp);
-//	putc('\n', yyerfp);
+}*/
+void yyerror(char *s)
+{
+	printf("%d: %s '%s'\n", yylineno, s, yytext);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+	/*if (argc>1)*/ yyin = fopen(argv[1], "r");
+
 	yyerfp = stderr;
 	yyparse();
+
+	fclose(yyin);
 	return 0;
 }
