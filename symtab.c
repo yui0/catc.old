@@ -6,8 +6,8 @@
 #include "symtab.h"
 #include "y.tab.h"
 
-extern	FILE	* yyerfp;
-extern	int	yynerrs;
+extern FILE *yyerfp;
+extern int yynerrs;
 
 void message(char *fmt, ...)
 {
@@ -268,9 +268,9 @@ void chk_parm(struct symtab *symbol, int count)
 {
 	if (symbol->s_pnum == NOT_SET) {
 		symbol->s_pnum = count;
-	} else if ((int) symbol->s_pnum != count)
-		warning("function %s should have %d argument(s)",
-		        symbol->s_name, symbol->s_pnum);
+	} else if ((int) symbol->s_pnum != count) {
+		warning("function %s should have %d argument(s)", symbol->s_name, symbol->s_pnum);
+	}
 }
 
 // pop block table

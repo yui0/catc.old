@@ -1,13 +1,13 @@
 struct symtab {
-	char *	s_name;		/* name pointer */
+	char *s_name;		/* name pointer */
 	int	s_type;		/* symbol type */
 	int	s_blknum;	/* static block depth */
 	union {
 		int s__num;
-		struct symtab * s__link;
+		struct symtab *s__link;
 	} s__;
 	int	s_offset;	/* symbol definition */
-	struct symtab * s_next;	/* next entry */
+	struct symtab *s_next;	/* next entry */
 };
 
 #define s_pnum	s__.s__num	/* count of parameters */
@@ -26,19 +26,18 @@ struct symtab {
 /*
  *	s_type values for S_TRACE
  */
-#define SYMmap	"undeclard", "function", "undefined function", \
-		"variable", "parameter"
+#define SYMmap	"undeclard", "function", "undefined function",  "variable", "parameter"
 
 /*
  *	typed functions, symbol table modules
  */
-struct symtab *	link_parm();	/* chain parameters */
-struct symtab *	s_find();	/* locate symbol by name */
-struct symtab *	make_parm();	/* declare parameter */
-struct symtab *	make_var();	/* define variable */
-struct symtab *	make_func();	/* define function */
+struct symtab *link_parm();	/* chain parameters */
+struct symtab *s_find();		/* locate symbol by name */
+struct symtab *make_parm();	/* declare parameter */
+struct symtab *make_var();	/* define variable */
+struct symtab *make_func();	/* define function */
 
 /*
  *	typed library functions
  */
-char * strsave();		/* dynamically save a string */
+char *strsave();		/* dynamically save a string */

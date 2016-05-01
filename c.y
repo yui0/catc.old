@@ -12,7 +12,7 @@
 extern int l_offset, l_max;
 %}
 
-%union  {
+%union {
 	struct symtab *y_sym;	/* Identifier */
 	char *y_str;		/* Constant */
 	int y_num;		/* count */
@@ -23,6 +23,7 @@ extern int l_offset, l_max;
  *	terminal symbols
  */
 
+%token	<y_str> STRING_LITERAL
 %token	IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
 %token	PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token	AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
@@ -308,12 +309,15 @@ expression
 
 string
 	: STRING_LITERAL
+	 {
+		 gen_str($1);
+	 }
 	| FUNC_NAME
 	;
 
 binary
 	: Identifier
-		{ chk_var($1);
+		{ chk_var($1); /*printf("[%s]\n-",yytext);*/
 		  gen(OP_LOAD, gen_mod($1), OFFSET($1), NAME($1));
 		}
 	| Constant
